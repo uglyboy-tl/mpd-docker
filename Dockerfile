@@ -11,13 +11,13 @@ ARG MPD_VERSION=0.24.4
 ARG APK_MIRROR=dl-cdn.alpinelinux.org
 RUN sed -i "s|dl-cdn.alpinelinux.org|$APK_MIRROR|g" /etc/apk/repositories \
  && apk add --no-cache build-base meson ninja pkgconf linux-headers \
-      alsa-lib-dev libmad-dev flac-dev libvorbis-dev libogg-dev libid3tag-dev zlib-dev
+      alsa-lib-dev libmad-dev flac-dev libvorbis-dev libogg-dev libid3tag-dev zlib-dev libsndfile-dev
 RUN wget -q --timeout=60 https://www.musicpd.org/download/mpd/0.24/mpd-$MPD_VERSION.tar.xz -O /tmp/mpd.tar.xz \
  && tar -xf /tmp/mpd.tar.xz -C /tmp
 WORKDIR /tmp/mpd-$MPD_VERSION
 RUN meson setup build --buildtype=release -Db_lto=false -Dstrip=true -Dmanpages=false \
       -Dalsa=enabled -Dmad=enabled -Dflac=enabled -Dvorbis=enabled -Did3tag=enabled -Ddsd=true \
-      -Dffmpeg=disabled -Dmpg123=disabled -Dopus=disabled -Dfaad=disabled -Dsndfile=disabled \
+      -Dffmpeg=disabled -Dmpg123=disabled -Dopus=disabled -Dfaad=disabled -Dsndfile=enabled \
       -Dwavpack=disabled -Daudiofile=disabled -Dmpcdec=disabled -Dgme=disabled -Dmikmod=disabled \
       -Dmodplug=disabled -Dopenmpt=disabled -Dsidplay=disabled -Dadplug=disabled -Dwildmidi=disabled \
       -Dfluidsynth=disabled -Dchromaprint=disabled -Dzzip=disabled \
@@ -41,7 +41,7 @@ LABEL org.opencontainers.image.title="mpd" \
       org.opencontainers.image.source="https://github.com/uglyboy-tl/mpd-docker" \
       org.opencontainers.image.licenses="MIT"
 RUN sed -i "s|dl-cdn.alpinelinux.org|$APK_MIRROR|g" /etc/apk/repositories \
- && apk add --no-cache alsa-lib libmad flac libvorbis libogg libid3tag zlib libstdc++
+ && apk add --no-cache alsa-lib libmad flac libvorbis libogg libid3tag zlib libstdc++ libsndfile
 COPY --from=build /stage/usr/local/bin/mpd /usr/local/bin/mpd
 RUN mkdir -p /var/lib/mpd /music && mpd --version | head -1
 EXPOSE 6600
