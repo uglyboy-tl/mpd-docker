@@ -15,9 +15,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-24.04-arm
+          - arch: arm64
+            runner: ubuntu-24.04-arm
             platform: linux/arm64
-          - runner: ubuntu-24.04
+          - arch: amd64
+            runner: ubuntu-24.04
             platform: linux/amd64
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -34,20 +36,35 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE }}
-          tags: |
-            type=raw,value=latest
-            type=raw,value=0.24.4
-
+      # 每个架构推自己的 tag，最后由 merge job 合成多架构索引。
+      # 两个 job 直接推同一个 tag 会互相覆盖（只剩下后完成的那个架构）。
       - uses: docker/build-push-action@v6
         with:
           context: .
           platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ env.IMAGE }}:latest-${{ matrix.arch }}
+            ${{ env.IMAGE }}:0.24.4-${{ matrix.arch }}
           cache-from: type=gha,scope=${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+
+  merge:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge per-arch tags into a multi-arch manifest
+        run: |
+          docker buildx imagetools create -t ${{ env.IMAGE }}:latest \
+            ${{ env.IMAGE }}:latest-arm64 ${{ env.IMAGE }}:latest-amd64
+          docker buildx imagetools create -t ${{ env.IMAGE }}:0.24.4 \
+            ${{ env.IMAGE }}:0.24.4-arm64 ${{ env.IMAGE }}:0.24.4-amd64
