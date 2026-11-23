@@ -1,6 +1,6 @@
 # mpd-docker
 
-精简版 Music Player Daemon 镜像，约 17 MB。用官方 Alpine 包构建出来是 400 MB 上下。
+精简版 Music Player Daemon 镜像，约 19 MB。用官方 Alpine 包构建出来是 400 MB 上下。
 
 ## 为什么要自编译
 
@@ -13,7 +13,7 @@ Alpine 和 Debian 的 mpd 包都编译了 ffmpeg 解码器，依赖链是：
 | 项 | 内容 |
 |---|---|
 | 输出 | alsa（另有 null / pipe） |
-| 解码 | mad（mp3/mp2）、flac、vorbis（ogg）、pcm（wav） |
+| 解码 | mad（mp3/mp2）、flac、vorbis（ogg）、sndfile（wav/aiff）、pcm |
 | 标签 | id3tag |
 | 数据库 | simple |
 
